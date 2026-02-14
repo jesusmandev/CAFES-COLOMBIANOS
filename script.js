@@ -201,16 +201,16 @@ let currentRegion = null;
 
 function animateCounters() {
     const counters = document.querySelectorAll('.fact-number');
-    
+
     counters.forEach(counter => {
         const target = parseInt(counter.getAttribute('data-target'));
         const duration = 2000;
         const increment = target / (duration / 16);
         let current = 0;
-        
+
         const updateCounter = () => {
             current += increment;
-            
+
             if (current < target) {
                 counter.textContent = Math.floor(current).toLocaleString('es-CO');
                 requestAnimationFrame(updateCounter);
@@ -218,7 +218,7 @@ function animateCounters() {
                 counter.textContent = target.toLocaleString('es-CO');
             }
         };
-        
+
         updateCounter();
     });
 }
@@ -236,7 +236,7 @@ const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
         if (entry.isIntersecting) {
             entry.target.classList.add('visible');
-            
+
             if (entry.target.classList.contains('facts')) {
                 animateCounters();
                 observer.unobserve(entry.target);
@@ -251,26 +251,65 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ============================================
-// NAVEGACIÓN SUAVE
+// NAVEGACIÓN SUAVE Y SCROLL-SPY
 // ============================================
 
+const navLinks = document.querySelectorAll('.nav-menu a');
+const ctaButton = document.querySelector('.cta-button');
+
+// Función para manejar el scroll suave
+function smoothScroll(targetId) {
+    const target = document.querySelector(targetId);
+    if (target) {
+        const headerHeight = document.querySelector('.navbar').offsetHeight;
+        const targetPosition = target.getBoundingClientRect().top + window.pageYOffset - headerHeight;
+
+        window.scrollTo({
+            top: targetPosition,
+            behavior: 'smooth'
+        });
+    }
+}
+
 document.querySelectorAll('.nav-menu a, .cta-button').forEach(anchor => {
-    anchor.addEventListener('click', function(e) {
+    anchor.addEventListener('click', function (e) {
         const href = this.getAttribute('href');
-        
+
         if (href && href.startsWith('#')) {
             e.preventDefault();
-            const target = document.querySelector(href);
-            
-            if (target) {
-                target.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
-            }
+            smoothScroll(href);
+
+            // Cerrar menú móvil si existiera (buena práctica)
+            // navigation.classList.remove('active');
         }
     });
 });
+
+// Scroll-Spy logic
+function updateActiveNavLink() {
+    const sections = document.querySelectorAll('section[id], #hero');
+    let currentSectionId = '';
+
+    sections.forEach(section => {
+        const sectionTop = section.offsetTop;
+        const sectionHeight = section.clientHeight;
+        const headerHeight = document.querySelector('.navbar').offsetHeight;
+
+        if (window.pageYOffset >= (sectionTop - headerHeight - 100)) {
+            currentSectionId = section.getAttribute('id');
+        }
+    });
+
+    navLinks.forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('href') === `#${currentSectionId}`) {
+            link.classList.add('active');
+        }
+    });
+}
+
+window.addEventListener('scroll', updateActiveNavLink);
+document.addEventListener('DOMContentLoaded', updateActiveNavLink);
 
 // ============================================
 // EFECTO PARALLAX
@@ -279,7 +318,7 @@ document.querySelectorAll('.nav-menu a, .cta-button').forEach(anchor => {
 window.addEventListener('scroll', () => {
     const scrolled = window.pageYOffset;
     const hero = document.querySelector('.hero');
-    
+
     if (hero && scrolled < window.innerHeight) {
         hero.style.backgroundPosition = `center ${scrolled * 0.5}px`;
     }
@@ -294,13 +333,13 @@ const navbar = document.querySelector('.navbar');
 
 window.addEventListener('scroll', () => {
     const currentScroll = window.pageYOffset;
-    
+
     if (currentScroll > 100) {
         navbar.style.boxShadow = '0 4px 20px rgba(74, 44, 42, 0.15)';
     } else {
         navbar.style.boxShadow = '0 2px 20px rgba(74, 44, 42, 0.1)';
     }
-    
+
     lastScroll = currentScroll;
 });
 
@@ -311,29 +350,29 @@ window.addEventListener('scroll', () => {
 function openRegionModal(regionName) {
     const modal = document.getElementById('regionModal');
     const data = regionsData[regionName];
-    
+
     if (!data) return;
-    
+
     currentRegion = regionName;
-    
+
     document.getElementById('modalTitle').textContent = regionName;
     document.getElementById('modalLocation').textContent = data.location;
     document.getElementById('modalDescription').innerHTML = `
         <p>${data.description}</p>
         <p>${data.fullDescription}</p>
     `;
-    
+
     const featuresList = document.getElementById('modalFeatures');
     featuresList.innerHTML = data.features.map(feature => `<li>${feature}</li>`).join('');
-    
+
     const producersList = document.getElementById('modalProducers');
     producersList.innerHTML = data.producers.map(producer => `<span class="producer-tag">${producer}</span>`).join('');
-    
+
     const mainImage = document.getElementById('modalMainImage');
     mainImage.style.backgroundImage = `url('${data.images[0]}')`;
     mainImage.style.backgroundSize = 'cover';
     mainImage.style.backgroundPosition = 'center';
-    
+
     const thumbs = document.querySelectorAll('.modal-image-thumb');
     thumbs.forEach((thumb, index) => {
         thumb.style.backgroundImage = `url('${data.images[index]}')`;
@@ -343,7 +382,7 @@ function openRegionModal(regionName) {
             thumbs.forEach((t, i) => t.classList.toggle('active', i === index));
         });
     });
-    
+
     modal.classList.add('active');
 }
 
@@ -353,7 +392,7 @@ function closeRegionModal() {
 }
 
 document.querySelectorAll('.region-button').forEach(button => {
-    button.addEventListener('click', function() {
+    button.addEventListener('click', function () {
         const regionCard = this.closest('.region-card');
         const regionName = regionCard.querySelector('.region-name').textContent;
         openRegionModal(regionName);
@@ -383,10 +422,10 @@ document.getElementById('visitButton').addEventListener('click', () => {
 function openPurchaseModal(regionName) {
     const modal = document.getElementById('purchaseModal');
     const data = regionsData[regionName];
-    
+
     currentRegion = regionName;
     document.getElementById('purchaseRegion').textContent = regionName;
-    
+
     const coffeeCards = document.getElementById('coffeeCards');
     coffeeCards.innerHTML = data.coffees.map((coffee, index) => `
         <div class="coffee-card" data-index="${index}" data-price="${coffee.price}">
@@ -399,30 +438,30 @@ function openPurchaseModal(regionName) {
             <div class="coffee-card-price">$${coffee.price.toLocaleString('es-CO')}</div>
         </div>
     `).join('');
-    
+
     document.querySelectorAll('.coffee-card').forEach(card => {
-        card.addEventListener('click', function() {
+        card.addEventListener('click', function () {
             document.querySelectorAll('.coffee-card').forEach(c => c.classList.remove('selected'));
             this.classList.add('selected');
-            
+
             const index = this.getAttribute('data-index');
             selectedCoffee = data.coffees[index];
             document.getElementById('selectedProduct').textContent = selectedCoffee.name;
             updateTotal();
         });
     });
-    
+
     if (data.coffees.length > 0) {
         const firstCard = coffeeCards.querySelector('.coffee-card');
         firstCard.click();
     }
-    
+
     modal.classList.add('active');
 }
 
 function updateTotal() {
     if (!selectedCoffee) return;
-    
+
     const quantity = parseInt(document.getElementById('quantity').value) || 1;
     const total = selectedCoffee.price * quantity;
     document.getElementById('totalPrice').textContent = '$' + total.toLocaleString('es-CO');
@@ -447,16 +486,16 @@ document.getElementById('quantity').addEventListener('change', updateTotal);
 document.getElementById('confirmPurchase').addEventListener('click', () => {
     const quantity = document.getElementById('quantity').value;
     const grindType = document.getElementById('grindType').value;
-    
+
     const grindOptions = {
         'grano': 'Grano Entero',
         'media': 'Molienda Media',
         'fina': 'Molienda Fina (Espresso)',
         'gruesa': 'Molienda Gruesa (Prensa)'
     };
-    
+
     alert(`¡Pedido Confirmado!\n\nProducto: ${selectedCoffee.name}\nCantidad: ${quantity} paquete(s)\nMolienda: ${grindOptions[grindType]}\nTotal: $${(selectedCoffee.price * quantity).toLocaleString('es-CO')}\n\nTe enviaremos un correo con los detalles de tu compra.`);
-    
+
     document.getElementById('purchaseModal').classList.remove('active');
 });
 
@@ -467,13 +506,13 @@ document.getElementById('confirmPurchase').addEventListener('click', () => {
 function openGalleryModal(index) {
     const modal = document.getElementById('galleryModal');
     const data = galleryData[index];
-    
+
     currentGalleryIndex = index;
-    
+
     document.getElementById('galleryModalImage').style.backgroundImage = `url('${data.image}')`;
     document.getElementById('galleryModalTitle').textContent = data.title;
     document.getElementById('galleryModalDescription').textContent = data.description;
-    
+
     modal.classList.add('active');
 }
 
@@ -514,7 +553,7 @@ document.addEventListener('keydown', (e) => {
 // ============================================
 
 document.querySelectorAll('.modal-close').forEach(closeBtn => {
-    closeBtn.addEventListener('click', function() {
+    closeBtn.addEventListener('click', function () {
         this.closest('.modal').classList.remove('active');
     });
 });
@@ -535,25 +574,25 @@ const formButton = document.querySelector('.form-button');
 if (contactForm && formButton) {
     formButton.addEventListener('click', (e) => {
         e.preventDefault();
-        
+
         const inputs = contactForm.querySelectorAll('.form-input');
         const textarea = contactForm.querySelector('.form-textarea');
         const name = inputs[0].value.trim();
         const email = inputs[1].value.trim();
         const message = textarea.value.trim();
-        
+
         if (!name || !email || !message) {
             alert('Por favor completa todos los campos');
             return;
         }
-        
+
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
             alert('Por favor ingresa un email válido');
             return;
         }
-        
+
         alert(`¡Gracias ${name}!\n\nTu mensaje ha sido enviado correctamente. Nos pondremos en contacto pronto a ${email}`);
-        
+
         inputs[0].value = '';
         inputs[1].value = '';
         textarea.value = '';
